@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar UI Docs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+        }
+        .code-box {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lunar UI Docs</h1>
+    <p>Boot the library (Just put this at the top and don't bother)</p>
+    <div class="code-box">
+   local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local LunarUI = {}
+local currentWindow = nil
+local textBoxValues = {}
+local sliderValues = {}
+local toggleStates = {}
+
+function LunarUI:CreateWindow(title, description)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "LunarUI"
+    screenGui.ResetOnSpawn = false
+    
+    local loadingFrame = Instance.new("Frame")
+    loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+    loadingFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    loadingFrame.BorderSizePixel = 0
+    loadingFrame.Parent = screenGui
+    
+    local loadingText = Instance.new("TextLabel")
+    loadingText.Size = UDim2.new(1, 0, 0, 50)
+    loadingText.Position = UDim2.new(0, 0, 0.4, 0)
+    loadingText.BackgroundTransparency = 1
+    loadingText.Text = "Loading..."
+    loadingText.TextColor3 = Color3.new(1, 1, 1)
+    loadingText.TextSize = 24
+    loadingText.Font = Enum.Font.GothamBold
+    loadingText.Parent = loadingFrame
+    
+    local descriptionText = Instance.new("TextLabel")
+    descriptionText.Size = UDim2.new(1, 0, 0, 30)
+    descriptionText.Position = UDim2.new(0, 0, 0.5, 0)
+    descriptionText.BackgroundTransparency = 1
+    descriptionText.Text = description
+    descriptionText.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    descriptionText.TextSize = 18
+    descriptionText.Font = Enum.Font.Gotham
+    descriptionText.Parent = loadingFrame
+    
+    local loadingBar = Instance.new("Frame")
+    loadingBar.Size = UDim2.new(0, 0, 0, 5)
+    loadingBar.Position = UDim2.new(0.25, 0, 0.6, 0)
+    loadingBar.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    loadingBar.BorderSizePixel = 0
+    loadingBar.Parent = loadingFrame
+    
+    local player = Players.LocalPlayer
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    
+    -- Loading animation
+    local loadingTween = TweenService:Create(loadingBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Size = UDim2.new(0.5, 0, 0, 5)})
+    loadingTween:Play()
+    
+    loadingTween.Completed:Wait()
+    wait(0.5)
+    
+    -- Create main window
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 600, 0, 400)
+    frame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = frame
+    
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = frame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 10)
+    titleCorner.Parent = titleBar
+    
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, -100, 1, 0)
+    titleText.Position = UDim2.new(0, 10, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = title
+    titleText.TextColor3 = Color3.new(1, 1, 1)
+    titleText.TextSize = 22
+    titleText.Font = Enum.Font.GothamBold
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.Parent = titleBar
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 40, 0, 40)
+    closeButton.Position = UDim2.new(1, -40, 0, 0)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.TextSize = 20
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = titleBar
+    
+    local minimizeButton = Instance.new("TextButton")
+    minimizeButton.Size = UDim2.new(0, 40, 0, 40)
+    minimizeButton.Position = UDim2.new(1, -80, 0, 0)
+    minimizeButton.BackgroundTransparency = 1
+    minimizeButton.Text = "-"
+    minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+    minimizeButton.TextSize = 30
+    minimizeButton.Font = Enum.Font.GothamBold
+    minimizeButton.Parent = titleBar
+    
+    local expandButton = Instance.new("TextButton")
+    expandButton.Size = UDim2.new(0, 40, 0, 40)
+    expandButton.Position = UDim2.new(1, -80, 0, 0)
+    expandButton.BackgroundTransparency = 1
+    expandButton.Text = "+"
+    expandButton.TextColor3 = Color3.new(1, 1, 1)
+    expandButton.TextSize = 30
+    expandButton.Font = Enum.Font.GothamBold
+    expandButton.Visible = false
+    expandButton.Parent = titleBar
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+    
+    local function toggleMinimize()
+        if frame.Size == UDim2.new(0, 600, 0, 400) then
+            frame:TweenSize(UDim2.new(0, 600, 0, 40), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
+            minimizeButton.Visible = false
+            expandButton.Visible = true
+        else
+            frame:TweenSize(UDim2.new(0, 600, 0, 400), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.5, true)
+            minimizeButton.Visible = true
+            expandButton.Visible = false
+        end
+    end
+    
+    minimizeButton.MouseButton1Click:Connect(toggleMinimize)
+    expandButton.MouseButton1Click:Connect(toggleMinimize)
+    
+    -- Create tab container
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Name = "TabContainer"
+    tabContainer.Size = UDim2.new(0, 150, 1, -40)
+    tabContainer.Position = UDim2.new(0, 0, 0, 40)
+    tabContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    tabContainer.BorderSizePixel = 0
+    tabContainer.Parent = frame
+    
+    local tabContainerCorner = Instance.new("UICorner")
+    tabContainerCorner.CornerRadius = UDim.new(0, 10)
+    tabContainerCorner.Parent = tabContainer
+    
+    local tabContentContainer = Instance.new("Frame")
+    tabContentContainer.Name = "TabContentContainer"
+    tabContentContainer.Size = UDim2.new(1, -150, 1, -40)
+    tabContentContainer.Position = UDim2.new(0, 150, 0, 40)
+    tabContentContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    tabContentContainer.BorderSizePixel = 0
+    tabContentContainer.Parent = frame
+    
+    local tabContentCorner = Instance.new("UICorner")
+    tabContentCorner.CornerRadius = UDim.new(0, 10)
+    tabContentCorner.Parent = tabContentContainer
+    
+    -- Make the window draggable
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    titleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    
+    -- Fade out loading screen and fade in main window
+    local loadingFadeOut = TweenService:Create(loadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1})
+    local windowFadeIn = TweenService:Create(frame, TweenInfo.new(0.5), {BackgroundTransparency = 0})
+    
+    frame.BackgroundTransparency = 1
+    loadingFadeOut:Play()
+    windowFadeIn:Play()
+    
+    loadingFadeOut.Completed:Connect(function()
+        loadingFrame:Destroy()
+    end)
+    
+    currentWindow = {
+        ScreenGui = screenGui,
+        Frame = frame,
+        TabContainer = tabContainer,
+        TabContentContainer = tabContentContainer,
+        Tabs = {}
+    }
+    
+    return currentWindow
+end
+
+function LunarUI:CreateTab(tabName)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+    
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = tabName
+    tabButton.Size = UDim2.new(1, 0, 0, 40)
+    tabButton.Position = UDim2.new(0, 0, 0, #currentWindow.Tabs * 40)
+    tabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    tabButton.BorderSizePixel = 0
+    tabButton.Text = tabName
+    tabButton.TextColor3 = Color3.new(1, 1, 1)
+    tabButton.TextSize = 16
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.Parent = currentWindow.TabContainer
+    
+    local tabButtonCorner = Instance.new("UICorner")
+    tabButtonCorner.CornerRadius = UDim.new(0, 5)
+    tabButtonCorner.Parent = tabButton
+    
+    local tabContent = Instance.new("ScrollingFrame")
+    tabContent.Name = tabName .. "Content"
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
+    tabContent.BackgroundTransparency = 1
+    tabContent.BorderSizePixel = 0
+    tabContent.ScrollBarThickness = 4
+    tabContent.Visible = false
+    tabContent.Parent = currentWindow.TabContentContainer
+    
+    local tabContentLayout = Instance.new("UIListLayout")
+    tabContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabContentLayout.Padding = UDim.new(0, 5)
+    tabContentLayout.Parent = tabContent
+    
+    local newTab = {
+        Button = tabButton,
+        Content = tabContent
+    }
+    
+    table.insert(currentWindow.Tabs, newTab)
+    
+    local function selectTab(tab)
+        for _, t in ipairs(currentWindow.Tabs) do
+            t.Button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            t.Content.Visible = false
+        end
+        tab.Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        tab.Content.Visible = true
+    end
+    
+    tabButton.MouseButton1Click:Connect(function()
+        selectTab(newTab)
+    end)
+    
+    if #currentWindow.Tabs == 1 then
+        selectTab(newTab)
+    end
+    
+    return newTab
+end
+
+function LunarUI:CreateButton(tabName, buttonText, buttonDescription, buttonCallback)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+
+    local tab = nil
+    for _, t in ipairs(currentWindow.Tabs) do
+        if t.Button.Text == tabName then
+            tab = t
+            break
+        end
+    end
+
+    if not tab then
+        error("Tab '" .. tabName .. "' not found.")
+    end
+
+    local button = Instance.new("TextButton")
+    button.Name = buttonText
+    button.Size = UDim2.new(1, -20, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, #tab.Content:GetChildren() * 45)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.BorderSizePixel = 0
+    button.Text = buttonText
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 14
+    button.Font = Enum.Font.Gotham
+    button.Parent = tab.Content
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 5)
+    buttonCorner.Parent = button
+
+    button.MouseButton1Click:Connect(function()
+        buttonCallback()
+    end)
+
+    local descriptionPopup = Instance.new("Frame")
+    descriptionPopup.Name = "DescriptionPopup"
+    descriptionPopup.Size = UDim2.new(0, 200, 0, 100)
+    descriptionPopup.Position = UDim2.new(0.5, -100, 0.5, -50)
+    descriptionPopup.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    descriptionPopup.BorderSizePixel = 0
+    descriptionPopup.Visible = false
+    descriptionPopup.Parent = currentWindow.ScreenGui
+
+    local popupCorner = Instance.new("UICorner")
+    popupCorner.CornerRadius = UDim.new(0, 5)
+    popupCorner.Parent = descriptionPopup
+
+    local descriptionText = Instance.new("TextLabel")
+    descriptionText.Size = UDim2.new(1, -20, 1, -20)
+    descriptionText.Position = UDim2.new(0, 10, 0, 10)
+    descriptionText.BackgroundTransparency = 1
+    descriptionText.Text = buttonDescription
+    descriptionText.TextColor3 = Color3.new(1, 1, 1)
+    descriptionText.TextSize = 14
+    descriptionText.Font = Enum.Font.Gotham
+    descriptionText.TextWrapped = true
+    descriptionText.Parent = descriptionPopup
+
+    button.MouseButton2Click:Connect(function()
+        descriptionPopup.Position = UDim2.new(0, UserInputService:GetMouseLocation().X, 0, UserInputService:GetMouseLocation().Y)
+        descriptionPopup.Visible = true
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton2 then
+            descriptionPopup.Visible = false
+        end
+    end)
+
+    return button
+end
+
+function LunarUI:CreateSection(tabName, sectionText)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+
+    local tab = nil
+    for _, t in ipairs(currentWindow.Tabs) do
+        if t.Button.Text == tabName then
+            tab = t
+            break
+        end
+    end
+
+    if not tab then
+        error("Tab '" .. tabName .. "' not found.")
+    end
+
+    local sectionLabel = Instance.new("TextLabel")
+    sectionLabel.Name = "Section_" .. sectionText
+    sectionLabel.Size = UDim2.new(1, -20, 0, 30)
+    sectionLabel.Position = UDim2.new(0, 10, 0, #tab.Content:GetChildren() * 45)
+    sectionLabel.BackgroundTransparency = 1
+    sectionLabel.Text = sectionText
+    sectionLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+    sectionLabel.TextSize = 16
+    sectionLabel.Font = Enum.Font.GothamBold
+    sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sectionLabel.Parent = tab.Content
+
+    return sectionLabel
+end
+
+function LunarUI:TextBox(tabName, placeholderText)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+
+    local tab = nil
+    for _, t in ipairs(currentWindow.Tabs) do
+        if t.Button.Text == tabName then
+            tab = t
+            break
+        end
+    end
+
+    if not tab then
+        error("Tab '" .. tabName .. "' not found.")
+    end
+
+    local textBoxFrame = Instance.new("Frame")
+    textBoxFrame.Name = "TextBoxFrame_" .. placeholderText
+    textBoxFrame.Size = UDim2.new(1, -20, 0, 40)
+    textBoxFrame.Position = UDim2.new(0, 10, 0, #tab.Content:GetChildren() * 45)
+    textBoxFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    textBoxFrame.BorderSizePixel = 0
+    textBoxFrame.Parent = tab.Content
+
+    local textBoxCorner = Instance.new("UICorner")
+    textBoxCorner.CornerRadius = UDim.new(0, 5)
+    textBoxCorner.Parent = textBoxFrame
+
+       local textBox = Instance.new("TextBox")
+    textBox.Name = "TextBox"
+    textBox.Size = UDim2.new(1, -20, 1, -10)
+    textBox.Position = UDim2.new(0, 10, 0, 5)
+    textBox.BackgroundTransparency = 1
+    textBox.Text = ""
+    textBox.PlaceholderText = placeholderText
+    textBox.TextColor3 = Color3.new(1, 1, 1)
+    textBox.PlaceholderColor3 = Color3.new(0.7, 0.7, 0.7)
+    textBox.TextSize = 14
+    textBox.Font = Enum.Font.Gotham
+    textBox.Parent = textBoxFrame
+
+    textBoxValues[placeholderText] = ""
+
+    textBox.FocusLost:Connect(function(enterPressed)
+        textBoxValues[placeholderText] = textBox.Text
+    end)
+
+    return textBox
+end
+
+function LunarUI:GetTextBoxValue(placeholderText)
+    return textBoxValues[placeholderText] or ""
+end
+
+function LunarUI:CreateSlider(tabName, sliderName, sliderMin, sliderMax)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+
+    local tab = nil
+    for _, t in ipairs(currentWindow.Tabs) do
+        if t.Button.Text == tabName then
+            tab = t
+            break
+        end
+    end
+
+    if not tab then
+        error("Tab '" .. tabName .. "' not found.")
+    end
+
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Name = "SliderFrame_" .. sliderName
+    sliderFrame.Size = UDim2.new(1, -20, 0, 60)
+    sliderFrame.Position = UDim2.new(0, 10, 0, #tab.Content:GetChildren() * 45)
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    sliderFrame.BorderSizePixel = 0
+    sliderFrame.Parent = tab.Content
+
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(0, 5)
+    sliderCorner.Parent = sliderFrame
+
+    local sliderTitle = Instance.new("TextLabel")
+    sliderTitle.Name = "Title"
+    sliderTitle.Size = UDim2.new(1, -20, 0, 20)
+    sliderTitle.Position = UDim2.new(0, 10, 0, 5)
+    sliderTitle.BackgroundTransparency = 1
+    sliderTitle.Text = sliderName
+    sliderTitle.TextColor3 = Color3.new(1, 1, 1)
+    sliderTitle.TextSize = 14
+    sliderTitle.Font = Enum.Font.GothamBold
+    sliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    sliderTitle.Parent = sliderFrame
+
+    local sliderBackground = Instance.new("Frame")
+    sliderBackground.Name = "Background"
+    sliderBackground.Size = UDim2.new(1, -20, 0, 10)
+    sliderBackground.Position = UDim2.new(0, 10, 0, 30)
+    sliderBackground.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    sliderBackground.BorderSizePixel = 0
+    sliderBackground.Parent = sliderFrame
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Name = "Fill"
+    sliderFill.Size = UDim2.new(0, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBackground
+
+    local sliderButton = Instance.new("TextButton")
+    sliderButton.Name = "SliderButton"
+    sliderButton.Size = UDim2.new(0, 20, 0, 20)
+    sliderButton.Position = UDim2.new(0, -10, 0.5, -10)
+    sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    sliderButton.Text = ""
+    sliderButton.Parent = sliderBackground
+
+    local sliderButtonCorner = Instance.new("UICorner")
+    sliderButtonCorner.CornerRadius = UDim.new(1, 0)
+    sliderButtonCorner.Parent = sliderButton
+
+    local sliderValue = Instance.new("TextLabel")
+    sliderValue.Name = "Value"
+    sliderValue.Size = UDim2.new(1, -20, 0, 20)
+    sliderValue.Position = UDim2.new(0, 10, 0, 40)
+    sliderValue.BackgroundTransparency = 1
+    sliderValue.Text = tostring(sliderMin)
+    sliderValue.TextColor3 = Color3.new(1, 1, 1)
+    sliderValue.TextSize = 14
+    sliderValue.Font = Enum.Font.Gotham
+    sliderValue.TextXAlignment = Enum.TextXAlignment.Left
+    sliderValue.Parent = sliderFrame
+
+    local function updateSlider(input)
+        local pos = math.clamp((input.Position.X - sliderBackground.AbsolutePosition.X) / sliderBackground.AbsoluteSize.X, 0, 1)
+        sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        sliderButton.Position = UDim2.new(pos, -10, 0.5, -10)
+        local value = math.floor(sliderMin + ((sliderMax - sliderMin) * pos))
+        sliderValue.Text = tostring(value)
+        sliderValues[sliderName] = value
+    end
+
+    local dragging = false
+
+    sliderButton.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSlider(input)
+        end
+    end)
+
+    sliderBackground.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            updateSlider(input)
+            dragging = true
+        end
+    end)
+
+    sliderValues[sliderName] = sliderMin
+
+    return sliderFrame
+end
+
+function LunarUI:GetSliderValue(sliderName)
+    return sliderValues[sliderName] or 0
+end
+
+function LunarUI:CreateToggle(tabName, toggleText, setFalseCallback, setTrueCallback, defaultSet)
+    if not currentWindow then
+        error("No window created. Call CreateWindow first.")
+    end
+
+    local tab = nil
+    for _, t in ipairs(currentWindow.Tabs) do
+        if t.Button.Text == tabName then
+            tab = t
+            break
+        end
+    end
+
+    if not tab then
+        error("Tab '" .. tabName .. "' not found.")
+    end
+
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = "ToggleFrame_" .. toggleText
+    toggleFrame.Size = UDim2.new(1, -20, 0, 40)
+    toggleFrame.Position = UDim2.new(0, 10, 0, #tab.Content:GetChildren() * 45)
+    toggleFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    toggleFrame.BorderSizePixel = 0
+    toggleFrame.Parent = tab.Content
+
+    local toggleCorner = Instance.new("UICorner")
+    toggleCorner.CornerRadius = UDim.new(0, 5)
+    toggleCorner.Parent = toggleFrame
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "ToggleButton"
+    toggleButton.Size = UDim2.new(0, 30, 0, 30)
+    toggleButton.Position = UDim2.new(0, 5, 0.5, -15)
+    toggleButton.BackgroundColor3 = defaultSet and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    toggleButton.Text = ""
+    toggleButton.Parent = toggleFrame
+
+    local toggleButtonCorner = Instance.new("UICorner")
+    toggleButtonCorner.CornerRadius = UDim.new(0, 5)
+    toggleButtonCorner.Parent = toggleButton
+
+    local toggleLabel = Instance.new("TextLabel")
+    toggleLabel.Name = "ToggleLabel"
+    toggleLabel.Size = UDim2.new(1, -50, 1, 0)
+    toggleLabel.Position = UDim2.new(0, 45, 0, 0)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Text = toggleText
+    toggleLabel.TextColor3 = Color3.new(1, 1, 1)
+    toggleLabel.TextSize = 14
+    toggleLabel.Font = Enum.Font.Gotham
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    toggleLabel.Parent = toggleFrame
+
+    local isToggled = defaultSet
+
+    local function updateToggle()
+        if isToggled then
+            toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            setTrueCallback()
+        else
+            toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            setFalseCallback()
+        end
+    end
+
+    toggleButton.MouseButton1Click:Connect(function()
+        isToggled = not isToggled
+        updateToggle()
+    end)
+
+    toggleStates[toggleText] = isToggled
+    updateToggle()
+
+    return toggleFrame
+end
+
+function LunarUI:GetToggleState(toggleText)
+    return toggleStates[toggleText] or false
+end
+
+function LunarUI:Notify(title, content)
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification"
+    notification.Size = UDim2.new(0, 250, 0, 100)
+    notification.Position = UDim2.new(1, 20, 1, 20)
+    notification.AnchorPoint = Vector2.new(1, 1)
+    notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    notification.BorderSizePixel = 0
+    notification.Parent = currentWindow.ScreenGui
+
+    local notificationCorner = Instance.new("UICorner")
+    notificationCorner.CornerRadius = UDim.new(0, 10)
+    notificationCorner.Parent = notification
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Size = UDim2.new(1, -20, 0, 30)
+    titleLabel.Position = UDim2.new(0, 10, 0, 5)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextSize = 18
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = notification
+
+    local contentLabel = Instance.new("TextLabel")
+    contentLabel.Name = "Content"
+    contentLabel.Size = UDim2.new(1, -20, 1, -40)
+    contentLabel.Position = UDim2.new(0, 10, 0, 35)
+    contentLabel.BackgroundTransparency = 1
+    contentLabel.Text = content
+    contentLabel.TextColor3 = Color3.new(0.9, 0.9, 0.9)
+    contentLabel.TextSize = 14
+    contentLabel.Font = Enum.Font.Gotham
+    contentLabel.TextXAlignment = Enum.TextXAlignment.Left
+    contentLabel.TextYAlignment = Enum.TextYAlignment.Top
+    contentLabel.TextWrapped = true
+    contentLabel.Parent = notification
+
+    -- Slide in animation
+    local slideInTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -20, 1, -20)})
+    slideInTween:Play()
+
+    -- Wait for 5 seconds
+    task.wait(5)
+
+    -- Slide out animation
+    local slideOutTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Position = UDim2.new(1, 20, 1, -20)})
+    slideOutTween:Play()
+
+    slideOutTween.Completed:Connect(function()
+        notification:Destroy()
+    end)
+end
+
+
+
+function LunarUI:Destroy()
+    if currentWindow and currentWindow.ScreenGui then
+        currentWindow.ScreenGui:Destroy()
+        currentWindow = nil
+        textBoxValues = {}
+        sliderValues = {}
+        toggleStates = {}
+    end
+end
+
+-- Make LunarUI available in the global environment
+_G.LunarUI = LunarUI
+
+--ignore this shit
+
+--Here ur ScriptHUB GOES
+
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Creating a Window</h2>
+    <div class="code-box">
+     LunarUI:CreateWindow("Sigma UI", "Sigma bruh")
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Creating a Tab</h2>
+    <div class="code-box">
+        LunarUI:CreateTab("SigmaTab")
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Creating a Section</h2>
+    <div class="code-box">
+        LunarUI:CreateSection("SigmaTab", "Cool section")
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Creating a Button</h2>
+    <div class="code-box">
+        function sayHelloWorld()
+    print("Hello world")
+end
+
+        LunarUI:CreateButton("SigmaTab", "Hello, World!", "A hello world button", sayHelloWorld)
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+<h2> The function has to be an already existing function without the brackets </h2>
+
+    <h2>Creating a Slider</h2>
+    <div class="code-box">
+        LunarUI:CreateSlider("SigmaTab", "Bruh", 1, 10)
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Retrieving Slider Value</h2>
+    <div class="code-box">
+        local value = LunarUI:GetSliderValue("Bruh")
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Creating a Toggle</h2>
+    <div class="code-box">
+        LunarUI:CreateToggle("SigmaTab", "IAmTheToggle", sayHelloWorld, sayHelloWorld, false)
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+
+    <h2>Making a Notification</h2>
+    <div class="code-box">
+        LunarUI:Notify("Notification", "You have a very small pp")
+    </div>
+  <button class="copy-button" onclick="copyToClipboard('code8')">Copy</button>
+</body>
+<script>
+        function copyToClipboard(id) {
+            var copyText = document.getElementById(id).innerText;
+            var textArea = document.createElement("textarea");
+            textArea.value = copyText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("Copy");
+            textArea.remove();
+            alert("Copied the text: " + copyText);
+        }
+    </script>
+</html>
